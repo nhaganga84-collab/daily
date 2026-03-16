@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Minhas Tarefas Diárias{% endblock %}
+{% block content %}
+<div class="container">
+    <header class="hero">
+        <div>
+            <p class="eyebrow">Organização diária</p>
+            <h1>Aplicativo de tarefas com Python + MongoDB</h1>
+            <p class="subtitle">Regista tarefas universitárias, domésticas e pessoais. Funciona bem no computador e no celular.</p>
+        </div>
+        <button class="install-btn" id="installBtn" hidden>Instalar no celular</button>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="stats-grid">
+        <article class="stat-card">
+            <span>Total</span>
+            <strong>{{ total }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Pendentes</span>
+            <strong>{{ pending }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Concluídas</span>
+            <strong>{{ done }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Tempo previsto</span>
+            <strong>{{ total_minutes }} min</strong>
+        </article>
+    </section>
+
+    <section class="grid">
+        <div class="panel form-panel">
+            <h2>Nova tarefa</h2>
+            <form action="{{ url_for('add_task') }}" method="post" class="task-form">
+                <label>Título
+                    <input type="text" name="title" placeholder="Ex.: Fazer trabalho de Python" required>
+                </label>
+
+                <label>Descrição
+                    <textarea name="description" rows="4" placeholder="Detalhes da tarefa"></textarea>
+                </label>
+
+                <div class="row-2">
+                    <label>Categoria
+                        <select name="category">
+                            <option>Universidade</option>
+                            <option>Casa</option>
+                            <option>Pessoal</option>
+                            <option>Trabalho</option>
+                        </select>
+                    </label>
+
+                    <label>Prioridade
+                        <select name="priority">
+                            <option>Alta</option>
+                            <option selected>Média</option>
+                            <option>Baixa</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="row-2">
+                    <label>Data
+                        <input type="date" name="task_date" value="{{ today_iso }}">
+                    </label>
+
+                    <label>Tempo estimado (min)
+                        <input type="number" name="estimated_minutes" min="0" value="30">
+                    </label>
+                </div>
+
+                <button type="submit" class="primary-btn">Guardar tarefa</button>
+            </form>
+        </div>
+
+        <div class="panel list-panel">
+            <div class="panel-head">
+                <h2>Minhas tarefas</h2>
+                <form method="get" class="filters">
+                    <input type="text" name="q" value="{{ current_query }}" placeholder="Pesquisar tarefa">
+                    <select name="status">
+                        <option value="all" {% if current_status == 'all' %}selected{% endif %}>Todos</option>
+                        <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pendentes</option>
+                        <option value="done" {% if current_status == 'done' %}selected{% endif %}>Concluídas</option>
+                    </select>
+                    <select name="category">
+                        <option value="all" {% if current_category == 'all' %}selected{% endif %}>Todas categorias</option>
+                        <option value="Universidade" {% if current_category == 'Universidade' %}selected{% endif %}>Universidade</option>
+                        <option value="Casa" {% if current_category == 'Casa' %}selected{% endif %}>Casa</option>
+                        <option value="Pessoal" {% if current_category == 'Pessoal' %}selected{% endif %}>Pessoal</option>
+                        <option value="Trabalho" {% if current_category == 'Trabalho' %}selected{% endif %}>Trabalho</option>
+                    </select>
+                    <button type="submit" class="secondary-btn">Filtrar</button>
+                </form>
+            </div>
+
+            <div class="task-list">
+                {% if tasks %}
+                    {% for task in tasks %}
+                    <article class="task-card {% if task.completed %}done{% endif %}">
+                        <div class="task-main">
+                            <div class="task-top">
+                                <h3>{{ task.title }}</h3>
+                                <span class="badge priority-{{ task.priority|lower }}">{{ task.priority }}</span>
+                            </div>
+                            <p>{{ task.description or 'Sem descrição.' }}</p>
+                            <div class="meta">
+                                <span>{{ task.category }}</span>
+                                <span>{{ task.task_date }}</span>
+                                <span>{{ task.estimated_minutes }} min</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <form action="{{ url_for('toggle_task', task_id=task._id) }}" method="post">
+                                <button class="secondary-btn" type="submit">{% if task.completed %}Reabrir{% else %}Concluir{% endif %}</button>
+                            </form>
+                            <form action="{{ url_for('delete_task', task_id=task._id) }}" method="post" onsubmit="return confirm('Eliminar esta tarefa?');">
+                                <button class="danger-btn" type="submit">Eliminar</button>
+                            </form>
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>Sem tarefas encontradas</h3>
+                        <p>Adiciona a tua primeira tarefa para começar.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
